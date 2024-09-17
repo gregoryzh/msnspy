@@ -1,7 +1,13 @@
 const axios = require('axios');
 const fs = require('fs');
 
-const API_KEY = 'apiKey'; // Set your key here
+const fs = require('fs');
+const path = require('path');
+
+const keyFilePath = path.join(__dirname, 'key.txt');
+const API_KEY = fs.readFileSync(keyFilePath, 'utf8').trim();
+
+console.log(API_KEY);; // Set your key here
 const IMAGE_PATH = 'test.jpg'; // Set your image path here
 const QUESTION = 'answer yes or no, is this image inappropriate for general'; // Set your question here
 
