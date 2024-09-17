@@ -1,15 +1,12 @@
 const axios = require('axios');
 const fs = require('fs');
-
-const fs = require('fs');
 const path = require('path');
 
 const keyFilePath = path.join(__dirname, 'key.txt');
 const API_KEY = fs.readFileSync(keyFilePath, 'utf8').trim();
 
-console.log(API_KEY);; // Set your key here
 const IMAGE_PATH = 'test.jpg'; // Set your image path here
-const QUESTION = 'answer yes or no, is this image inappropriate for general'; // Set your question here
+const QUESTION = 'answer only "yes" or "no", is this image inappropriate for general audience'; // Set your question here
 
 const ENDPOINT = 'https://msnspy.openai.azure.com/openai/deployments/gpt-4o/chat/completions?api-version=2024-02-15-preview';
 
@@ -48,7 +45,7 @@ async function main() {
             }
         });
 
-        console.log(response.data.message);
+        console.log(response.data.choices[0].message.content);
     } catch (error) {
         console.error(`Error: ${error.response.status}, ${error.response.statusText}`);
     }

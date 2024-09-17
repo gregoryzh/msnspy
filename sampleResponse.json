@@ -1,0 +1,80 @@
+{
+    "choices": [
+        {
+            "content_filter_results": {
+                "hate": {
+                    "filtered": false,
+                    "severity": "safe"
+                },
+                "protected_material_code": {
+                    "filtered": false,
+                    "detected": false
+                },
+                "protected_material_text": {
+                    "filtered": false,
+                    "detected": false
+                },
+                "self_harm": {
+                    "filtered": false,
+                    "severity": "safe"
+                },
+                "sexual": {
+                    "filtered": false,
+                    "severity": "safe"
+                },
+                "violence": {
+                    "filtered": false,
+                    "severity": "safe"
+                }
+            },
+            "finish_reason": "stop",
+            "index": 0,
+            "logprobs": null,
+            "message": {
+                "content": "No, this image is not inappropriate for general audiences.",
+                "role": "assistant"
+            }
+        }
+    ],
+    "created": 1726611958,
+    "id": "chatcmpl-A8avuaAbeGWvFmulniyc4GxKGiSm8",
+    "model": "gpt-4o-2024-08-06",
+    "object": "chat.completion",
+    "prompt_filter_results": [
+        {
+            "prompt_index": 0,
+            "content_filter_result": {
+                "sexual": {
+                    "filtered": false,
+                    "severity": "safe"
+                },
+                "violence": {
+                    "filtered": false,
+                    "severity": "safe"
+                },
+                "hate": {
+                    "filtered": false,
+                    "severity": "safe"
+                },
+                "self_harm": {
+                    "filtered": false,
+                    "severity": "safe"
+                },
+                "jailbreak": {
+                    "filtered": false,
+                    "detected": false
+                },
+                "custom_blocklists": {
+                    "filtered": false,
+                    "details": []
+                }
+            }
+        }
+    ],
+    "system_fingerprint": "fp_b2ffeb16ee",
+    "usage": {
+        "completion_tokens": 11,
+        "prompt_tokens": 677,
+        "total_tokens": 688
+    }
+}
