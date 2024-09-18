@@ -50,6 +50,7 @@ function getArticleIdsAndMarket(cards) {
 async function getCardItem(id, market) {
     const articleDetial = await getArcileDetails(id, market);
     return {
+        id,
         images: articleDetial?.imageResources?.map(r => ({url: r.url, isViolate: "not checked"})) || [],
         text: articleDetial.body,
         isViolate: "not checked"
@@ -91,13 +92,15 @@ async function main() {
         logInfo(`Getting article details for [Article: ${article.market}/${article.id}]`);
         articles.push(await getCardItem(article.id, article.market))
         // wait for a certain time to avoid been banned
-        sleep(articleInterval);
+        
+        await sleep(articleInterval);
     }
     logInfo("End of getting articles details");
     logInfo("Start of validating the content with AI...");
     const maxAiItems = aiEnv.maxAiItems;
-    let count = 0;
+    
     for (let i = 0; i < articles.length; i++) {
+        let count = 0;
         const article = articles[i];
         // validate images
         for(let j = 0; j < article.images.length; j++) {
@@ -108,15 +111,17 @@ async function main() {
             count++;
             img.isViolate = await isViolate(img.url)
             // wait for a certain time to avoid been banned
-            sleep(aiInterval);
+            await sleep(aiInterval);
         }
-        // TODO: validate article content
-        article.isViolate = "checked";
+        // not ding text, too much token consumed
+        // let textResult = await isViolate(null, article.text)
+        // article.isViolate = textResult;
+        // await sleep(aiInterval);
     }
     logInfo("End of validating the content with AI...");
     logDivider();
     logInfo("[Report] validation result: ");
-    logInfo(articles);
+    logInfo(articles.map(article => ({ images: article.images, isViolate: article.isViolate })));
     logDivider();
     logInfo("App ends...")
 }
