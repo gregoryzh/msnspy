@@ -8,18 +8,28 @@ let articles = []; // { images: {url: string; isSensitive: string}[], text: stri
 const env = getEnv();
 const feedEnv = env.feed;
 const aiEnv = env.ai;
+let articleCnt = 0;
+let nextPageUrl = "";
+
 // only get 1st page for now
 async function getFeedsFromMsn() {
+    if (articleCnt >= feedEnv.maxFeedItems) {
+        return;
+    }
     logInfo("Start of getting Feeds...")
     const options = {
         headers: {
             'Content-Type': 'application/json'
         }
     }
-    const response = await axios.get(feedEnv.feedFirstPageUrl, options)
-    logDebug(`[Feed RESPONSE]: ${JSON.stringify(response.data)}`);
+    const url = nextPageUrl || feedEnv.feedFirstPageUrl;
+    logInfo(`[Feed request url]: ${url}`)
+    const response = await axios.get(url, options)
+    const data = response.data;
+    logDebug(`[Feed RESPONSE]: ${JSON.stringify(data)}`);
     logInfo("End of getting Feeds...")
-    return response.data;
+    nextPageUrl = data.nextPageUrl;
+    return data;
 }
 
 function findAllArticleIdsFromMsnFeed(response) {
@@ -41,7 +51,9 @@ function findAllArticleIdsFromMsnFeed(response) {
     // filter find only articles
     const filteredCardPool = cardPool.filter(card => card.type === "article")
     // only return max number of cards
-    return filteredCardPool.slice(0, feedEnv.maxFeedItems);
+    const slicedCardPool =  filteredCardPool.slice(0, feedEnv.maxFeedItems - articleCnt);
+    articleCnt += slicedCardPool.length;
+    return slicedCardPool
 }
 
 function getArticleIdsAndMarket(cards) {
@@ -81,15 +93,23 @@ async function getArcileDetails(id, market) {
 
 async function main() {
     logInfo("App starts...")
-    const feeds = await getFeedsFromMsn();
-    const cards = findAllArticleIdsFromMsnFeed(feeds);
-    const articleIdsAndMarkt = getArticleIdsAndMarket(cards);
+    // get all articles firstly. 
+    let cards = [];
+    while (articleCnt < feedEnv.maxFeedItems) {
+        cards = cards.concat(findAllArticleIdsFromMsnFeed(await getFeedsFromMsn()));
+        await sleep(feedEnv.intervalForGettingArticleDetailsInSec);
+    }
+    const articleIdsAndMarket = getArticleIdsAndMarket(cards);
+    logDebug("[ArticleIdsAndMarkets]");
+    logDebug(articleIdsAndMarket);
+
+    // run ai module now.
     const articleInterval = feedEnv.intervalForGettingArticleDetailsInSec;
     const aiInterval = aiEnv.intervalForRequestingAiInSec;
     logDivider();
     logInfo("Start of getting articles details");
-    for (let i = 0; i < articleIdsAndMarkt.length; i++) {
-        const article = articleIdsAndMarkt[i];
+    for (let i = 0; i < articleIdsAndMarket.length; i++) {
+        const article = articleIdsAndMarket[i];
         logInfo(`Getting article details for [Article: ${article.market}/${article.id}]`);
         articles.push(await getCardItem(article.id, article.market))
         // wait for a certain time to avoid been banned
