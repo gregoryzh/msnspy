@@ -2,20 +2,17 @@ const fs = require('fs');
 const path = require('path');
 
 const keyFilePath = path.join(__dirname, 'env.json');
+const logFilePath = path.join(__dirname, `log_${Date.now()}.txt`); // New log file with timestamp
 
 let _envObj = undefined;
+
 function getEnv() {
     if (!_envObj) {
         _envObj = JSON.parse(fs.readFileSync(keyFilePath, 'utf8'));
     }
     return _envObj;
 }
-/**
- * Log levels are: 
- * 3. error, info, debug
- * 2. error, info
- * 1. error
- */
+
 function logger(type, message) {
     const logLevel = getEnv().logLevel;
     const levels = {
@@ -27,32 +24,15 @@ function logger(type, message) {
         return;
     }
     message = typeof message === "object" ? JSON.stringify(message, null, 2) : message;
-    console.log(`[${type.toUpperCase()}]: `, message);
+    const logMessage = `[${type.toUpperCase()}]: ${message}`;
+
+    // Write log message to the log file
+    fs.appendFileSync(logFilePath, logMessage + '\n');
+
+    console.log(logMessage);
 }
 
-function logError(message) {
-    logger('error', message);
-}
-
-function logInfo(message) {
-    logger('info', message);
-}
-function logDebug(message) {
-    logger('debug', message);
-}
-function logDivider() {
-    console.log('---------------------------------');
-}
-
-async function sleep(sec) {
-    logInfo(`Waiting for ${sec} secends`)
-    const timerPromise = new Promise(resolve => {
-        setTimeout(() => {
-            resolve()
-        }, sec * 1000);
-    })
-    await timerPromise;
-}
+// Rest of the code...
 
 exports.getEnv = getEnv;
 exports.logError = logError;

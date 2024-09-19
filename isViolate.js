@@ -38,10 +38,10 @@ async function isViolate(imgUrl, contentText) {
         logInfo(`image size ${width}x${height}`);
         let resizedWidth, resizedHeight;
         if (width > height) {
-            resizedWidth = 300;
+            resizedWidth = 500;
             resizedHeight = Math.round((height / width) * resizedWidth);
         } else {
-            resizedHeight = 300;
+            resizedHeight = 500;
             resizedWidth = Math.round((width / height) * resizedHeight);
         }
         const resizedImage = await image.resize(resizedWidth, resizedHeight).toBuffer();

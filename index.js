@@ -1,6 +1,7 @@
 const axios = require('axios');
 const { getEnv, logDebug, logError, logInfo, logDivider, sleep } = require('./Utils');
 const { isViolate } = require('./isViolate');
+const fs = require('fs');
 
 // globals
 let articles = []; // { images: {url: string; isViolate: string}[], text: string, isViolate: string }[]
@@ -109,8 +110,15 @@ async function main() {
                 break;
             }
             count++;
-            img.isViolate = await isViolate(img.url)
+
+            img.isViolate = await isViolate(img.url);
+
+            if (img.isViolate.toLowerCase().startsWith("yes")) {
+                fs.appendFileSync('bad.txt', img.url + '\n');
+            }
+
             // wait for a certain time to avoid been banned
+            
             await sleep(aiInterval);
         }
         // not ding text, too much token consumed
