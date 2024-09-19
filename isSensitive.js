@@ -4,10 +4,10 @@ const { getEnv, logDebug, logError, logInfo, logDivider } = require('./Utils');
 const sharp = require('sharp');
 
 const API_KEY = getEnv().ai.key;
-const QUESTION = 'simple answer, start with "yes" or "no", is the attached image or following text inappropriate for general audience.'; // Set your question here
+const QUESTION = 'answer in the fomrat of "X%, reason", how likely is the attached image or text inappropriate for viewers of all ages'; // Set your question here
 const ENDPOINT = getEnv().ai.endpoint
 
-async function isViolate(imgUrl, contentText) {
+async function isSensitive(imgUrl, contentText) {
     logDebug(`API_KEY: ${API_KEY}`);
     
     logDebug(`[ENDPOINT]: ${ENDPOINT}`);
@@ -45,7 +45,7 @@ async function isViolate(imgUrl, contentText) {
             resizedWidth = Math.round((width / height) * resizedHeight);
         }
         const resizedImage = await image.resize(resizedWidth, resizedHeight).toBuffer();
-
+        logInfo(`image resize ${resizedWidth}x${resizedHeight}`);
         const resizedEncodedImage = resizedImage.toString('base64');
         // logDebug("Image blob: " + encodedImage);
         content.push({
@@ -115,4 +115,4 @@ async function isViolate(imgUrl, contentText) {
     }
 }
 
-exports.isViolate = isViolate;
+exports.isSensitive = isSensitive;

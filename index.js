@@ -1,10 +1,10 @@
 const axios = require('axios');
 const { getEnv, logDebug, logError, logInfo, logDivider, sleep } = require('./Utils');
-const { isViolate } = require('./isViolate');
+const { isSensitive } = require('./isSensitive');
 const fs = require('fs');
 
 // globals
-let articles = []; // { images: {url: string; isViolate: string}[], text: string, isViolate: string }[]
+let articles = []; // { images: {url: string; isSensitive: string}[], text: string, isSensitive: string }[]
 const env = getEnv();
 const feedEnv = env.feed;
 const aiEnv = env.ai;
@@ -52,9 +52,9 @@ async function getCardItem(id, market) {
     const articleDetial = await getArcileDetails(id, market);
     return {
         id,
-        images: articleDetial?.imageResources?.map(r => ({url: r.url, isViolate: "not checked"})) || [],
-        text: articleDetial.body,
-        isViolate: "not checked"
+        images: articleDetial?.imageResources?.map(r => ({url: r.url, sensitivity: "not checked"})) || [],
+        text: articleDetial.body
+        // isSensitive: "not checked"
     }
 }
 
@@ -111,25 +111,42 @@ async function main() {
             }
             count++;
 
-            img.isViolate = await isViolate(img.url);
+            const sensitivity = await isSensitive(img.url);
+            img.sensitivity = sensitivity;
+            try {
+                const [percentage, reason] = sensitivity.split('%');
+                const sensitivityNumber = parseInt(percentage);
 
-            if (img.isViolate.toLowerCase().startsWith("yes")) {
-                fs.appendFileSync('bad.txt', img.url + '\n');
+                if (sensitivityNumber > 40) {
+                    
+                    try {
+                        fs.appendFileSync('sensitivity.log', `${article.id}: ${img.url} : ${sensitivity} \n`);
+                    } catch (error) {
+                        logError(`Error writing to file: ${error}`);
+                    }
+                }
+
+            } catch (error){
+                logError(`Error while parsing : ${error}`)
             }
-
+            try {
+                fs.appendFileSync('scanHistory.log', JSON.stringify(img) + '\n');
+            } catch (error) {
+                logError(`Error writing to file: ${error}`);
+            }
             // wait for a certain time to avoid been banned
             
             await sleep(aiInterval);
         }
         // not ding text, too much token consumed
-        // let textResult = await isViolate(null, article.text)
-        // article.isViolate = textResult;
+        // let textResult = await isSensitive(null, article.text)
+        // article.isSensitive = textResult;
         // await sleep(aiInterval);
     }
     logInfo("End of validating the content with AI...");
     logDivider();
     logInfo("[Report] validation result: ");
-    logInfo(articles.map(article => ({ images: article.images, isViolate: article.isViolate })));
+    logInfo(articles.map(article => ({ images: article.images, isSensitive: article.isSensitive })));
     logDivider();
     logInfo("App ends...")
 }
