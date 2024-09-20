@@ -4,7 +4,7 @@ const { getEnv, logDebug, logError, logInfo, logDivider } = require('./Utils');
 const sharp = require('sharp');
 
 const API_KEY = getEnv().ai.key;
-const QUESTION = 'answer in the fomrat of "X%, reason", how likely is the attached image has exposed anatomy or censored image'; // Set your question here
+const QUESTION = 'answer in the fomrat of "X%, reason", how likely is the attached image has exposed anatomy or censored images'; // Set your question here
 const ENDPOINT = getEnv().ai.endpoint
 
 async function isSensitive(imgUrl, contentText) {
@@ -101,10 +101,15 @@ async function isSensitive(imgUrl, contentText) {
             break; // Break out of the retry loop if request is successful
         } catch (error) {
             logError(error);
-            retryCount++;
-            logInfo(`Retrying request... (Attempt ${retryCount})`);
-            const waitTime = Math.pow(2, retryCount) * 8000; // exponential back-off wait time
-            await new Promise(resolve => setTimeout(resolve, waitTime));
+            if (error.response && error.response.status === 429) {
+                retryCount++;
+                logInfo(`Retrying request... (Attempt ${retryCount})`);
+                const waitTime = Math.pow(2, retryCount) * 8000; // exponential back-off wait time
+                await new Promise(resolve => setTimeout(resolve, waitTime));
+            } else {
+                logError("Request failed with an error.");
+                break; // Break out of the retry loop if request fails with an error other than 429
+            }
         }
     }
 
