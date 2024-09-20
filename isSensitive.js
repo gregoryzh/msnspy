@@ -4,7 +4,7 @@ const { getEnv, logDebug, logError, logInfo, logDivider } = require('./Utils');
 const sharp = require('sharp');
 
 const API_KEY = getEnv().ai.key;
-const QUESTION = 'answer in the fomrat of "X%, reason", how likely is the attached image has exposed anatomy such as bare buttocks, female nipples, genitalia or censored images of any of the above, mark with a higher rate if you are not quite sure'; // Set your question here
+const QUESTION = 'answer in the fomrat of "X%, reason", how likely is the attached image has exposed anatomy such as bare buttocks, female nipples, genitalia, mark with a higher rate if you are not confident'; // Set your question here
 const ENDPOINT = getEnv().ai.endpoint
 
 async function isSensitive(imgUrl, contentText) {
@@ -49,6 +49,8 @@ async function isSensitive(imgUrl, contentText) {
             const resizedImage = await image.resize(resizedWidth, resizedHeight).toBuffer();
             logInfo(`image resize ${resizedWidth}x${resizedHeight}`);
             const resizedEncodedImage = resizedImage.toString('base64');
+            const fileSize = resizedImage.length;
+            logInfo(`Resized image file size: ${fileSize} bytes`);
             // logDebug("Image blob: " + encodedImage);
             content.push({
                 type: 'image_url',
@@ -61,10 +63,7 @@ async function isSensitive(imgUrl, contentText) {
             logInfo('Failed to get image content...');
             return "";
         }
-        
     }
-    
-    
     content.push({
         type: 'text',
         text: question
@@ -82,18 +81,18 @@ async function isSensitive(imgUrl, contentText) {
         stream: false
     };
 
+    const options = {
+        headers: {
+            'api-key': API_KEY,
+            'Content-Type': 'application/json'
+        }
+    }
     const maxRetries = 3;
     let retryCount = 0;
     let response;
 
     while (retryCount < maxRetries) {
         try {
-            const options = {
-                headers: {
-                    'api-key': API_KEY,
-                    'Content-Type': 'application/json'
-                }
-            }
             logDebug(`[PAYLOAD]:`);
             logDebug(payload);
             logDebug(`[OPTIONS]:`);
@@ -107,14 +106,15 @@ async function isSensitive(imgUrl, contentText) {
             logDivider();
             break; // Break out of the retry loop if request is successful
         } catch (error) {
-            logError(error);
+            
             if (error.response && error.response.status === 429) {
                 retryCount++;
-                logInfo(`Retrying request... (Attempt ${retryCount})`);
+                logInfo(`Request failed with status code 429 at Attempt ${retryCount}`);
                 const waitTime = Math.pow(2, retryCount) * 8000; // exponential back-off wait time
                 await new Promise(resolve => setTimeout(resolve, waitTime));
             } else {
                 logError("Request failed with an error.");
+                logError(error);
                 break; // Break out of the retry loop if request fails with an error other than 429
             }
         }
