@@ -17,7 +17,7 @@ async function main() {
   // const url = 'https://www.moviemaker.com/cdn-cgi/image/width%3D788%2Cheight%3D444%2Cfit%3Dcrop%2Cquality%3D80%2Cformat%3Dauto%2Conerror%3Dredirect%2Cmetadata%3Dnone/wp-content/uploads/2023/12/The-Deep-1.jpg';
   // const url = 'https://cdn.mos.cms.futurecdn.net/88JTWeMwa8WsvUxCefhbLJ-1600-80.jpg.webp';
   // const url = 'https://cdn.mos.cms.futurecdn.net/X9EM4sFmnKtj8HUFgHxnK9-2560-80.jpg.webp';
-  // const url = "https://img-s-msn-com.akamaized.net/tenant/amp/entityid/AA1qRGgm.img"; // content filter marked as jailbreak
+  const url = "https://img-s-msn-com.akamaized.net/tenant/amp/entityid/AA1qRGgm.img"; // content filter marked as jailbreak
   let result = await isSensitive(url);
   console.log(result);
 }
