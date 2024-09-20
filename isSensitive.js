@@ -4,7 +4,7 @@ const { getEnv, logDebug, logError, logInfo, logDivider } = require('./Utils');
 const sharp = require('sharp');
 
 const API_KEY = getEnv().ai.key;
-const QUESTION = 'answer in the fomrat of "X%, reason", how likely is the attached image or text inappropriate for viewers of all ages. The RED Guidelines --- No: Exposed anatomy i.e. bare buttocks, female nipples, genitalia. No: Pixelated/censored images/keyframes of any of the above.'; // Set your question here
+const QUESTION = 'answer in the fomrat of "X%, reason", how likely is the attached image has exposed anatomy or censored image'; // Set your question here
 const ENDPOINT = getEnv().ai.endpoint
 
 async function isSensitive(imgUrl, contentText) {
