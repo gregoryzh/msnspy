@@ -4,7 +4,7 @@ const { getEnv, logDebug, logError, logInfo, logDivider } = require('./Utils');
 const sharp = require('sharp');
 
 const API_KEY = getEnv().ai.key;
-const QUESTION = 'answer in the fomrat of "X%, reason", how likely is the attached image has exposed anatomy or censored images'; // Set your question here
+const QUESTION = 'answer in the fomrat of "X%, reason", how likely is the attached image has exposed anatomy such as bare buttocks, female nipples, genitalia or censored images of any of the above, mark with a higher rate if you are not quite sure'; // Set your question here
 const ENDPOINT = getEnv().ai.endpoint
 
 async function isSensitive(imgUrl, contentText) {
@@ -22,39 +22,46 @@ async function isSensitive(imgUrl, contentText) {
     logDivider();
     
     logInfo('Starting the AI model...');
-    if(imgUrl){
-        logInfo('Get Image content...');
-        const encodedImageResponse = await axios.get(imgUrl, {
-            responseType: 'arraybuffer'
-        });
-        logInfo('End of getting Image content...');
-        const encodedImage = Buffer.from(encodedImageResponse.data, 'binary').toString('base64');
 
-        // Resize the image
-        const image = await sharp(Buffer.from(encodedImage, 'base64'));
-        const metadata = await image.metadata();
-        const width = metadata.width;
-        const height = metadata.height;
-        logInfo(`image size ${width}x${height}`);
-        let resizedWidth, resizedHeight;
-        if (width > height) {
-            resizedWidth = 500;
-            resizedHeight = Math.round((height / width) * resizedWidth);
-        } else {
-            resizedHeight = 500;
-            resizedWidth = Math.round((width / height) * resizedHeight);
-        }
-        const resizedImage = await image.resize(resizedWidth, resizedHeight).toBuffer();
-        logInfo(`image resize ${resizedWidth}x${resizedHeight}`);
-        const resizedEncodedImage = resizedImage.toString('base64');
-        // logDebug("Image blob: " + encodedImage);
-        content.push({
-            type: 'image_url',
-            image_url: {
-                // url: imgUrl
-                url: `data:image/jpeg;base64,${resizedEncodedImage}`
+    if(imgUrl){
+        try {
+            logInfo('Get Image content...');
+            const encodedImageResponse = await axios.get(imgUrl, {
+                responseType: 'arraybuffer'
+            });
+            logInfo('End of getting Image content...');
+            const encodedImage = Buffer.from(encodedImageResponse.data, 'binary').toString('base64');
+
+            // Resize the image
+            const image = await sharp(Buffer.from(encodedImage, 'base64'));
+            const metadata = await image.metadata();
+            const width = metadata.width;
+            const height = metadata.height;
+            logInfo(`image size ${width}x${height}`);
+            let resizedWidth, resizedHeight;
+            if (width > height) {
+                resizedWidth = 500;
+                resizedHeight = Math.round((height / width) * resizedWidth);
+            } else {
+                resizedHeight = 500;
+                resizedWidth = Math.round((width / height) * resizedHeight);
             }
-        })
+            const resizedImage = await image.resize(resizedWidth, resizedHeight).toBuffer();
+            logInfo(`image resize ${resizedWidth}x${resizedHeight}`);
+            const resizedEncodedImage = resizedImage.toString('base64');
+            // logDebug("Image blob: " + encodedImage);
+            content.push({
+                type: 'image_url',
+                image_url: {
+                    // url: imgUrl
+                    url: `data:image/jpeg;base64,${resizedEncodedImage}`
+                }
+            })
+        } catch (error) {
+            logInfo('Failed to get image content...');
+            return "";
+        }
+        
     }
     
     

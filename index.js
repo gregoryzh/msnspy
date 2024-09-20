@@ -10,7 +10,7 @@ const feedEnv = env.feed;
 const aiEnv = env.ai;
 let articleCnt = 0;
 let nextPageUrl = "";
-
+const scanResultFile = `scanResult-${Date.now()}.log`;
 // only get 1st page for now
 async function getFeedsFromMsn() {
     if (articleCnt >= feedEnv.maxFeedItems) {
@@ -64,7 +64,7 @@ async function getCardItem(id, market) {
     const articleDetial = await getArcileDetails(id, market);
     return {
         id,
-        images: articleDetial?.imageResources?.map(r => ({url: r.url, sensitivity: "not checked"})) || [],
+        images: articleDetial?.imageResources?.map(r => ({articleId:id, url: r.url, sensitivity: "not checked"})) || [],
         text: articleDetial.body
         // isSensitive: "not checked"
     }
@@ -111,10 +111,9 @@ async function main() {
     for (let i = 0; i < articleIdsAndMarket.length; i++) {
         const article = articleIdsAndMarket[i];
         logInfo(`Getting article details for [Article: ${article.market}/${article.id}]`);
-        articles.push(await getCardItem(article.id, article.market))
-        // wait for a certain time to avoid been banned
+        articles.push({id: article.id, market: article.market});
         
-        await sleep(articleInterval);
+        // await sleep(articleInterval);
     }
     logInfo("End of getting articles details");
     logInfo("Start of validating the content with AI...");
@@ -122,7 +121,18 @@ async function main() {
     
     for (let i = 0; i < articles.length; i++) {
         let count = 0;
-        const article = articles[i];
+        const articleMeta = articles[i];
+        let article;
+        try {
+            article = await getCardItem(articleMeta.id, articleMeta.market);
+            articles[i] = article;
+        }catch (error) {
+            logError(`Error while getting article details: ${error}`);
+            await sleep(articleInterval);
+            continue;
+        }
+        
+        logInfo(`Validating images for article: ${articleMeta.id}`);
         // validate images
         for(let j = 0; j < article.images.length; j++) {
             const img = article.images[j];
@@ -133,41 +143,43 @@ async function main() {
 
             const sensitivity = await isSensitive(img.url);
             img.sensitivity = sensitivity;
-            try {
-                const [percentage, reason] = sensitivity.split('%');
-                const sensitivityNumber = parseInt(percentage);
-
-                if (sensitivityNumber > 40) {
-                    
-                    try {
-                        fs.appendFileSync('sensitivity.log', `${article.id}: ${img.url} : ${sensitivity} \n`);
-                    } catch (error) {
-                        logError(`Error writing to file: ${error}`);
+            if (sensitivity) {
+                try {
+                    const [percentage, reason] = sensitivity.split('%');
+                    const sensitivityNumber = parseInt(percentage);
+    
+                    if (sensitivityNumber > 40) {
+                        try {
+                            fs.appendFileSync('sensitivity.log', `${article.id}: ${img.url} : ${sensitivity} \n`);
+                        } catch (error) {
+                            logError(`Error writing to file: ${error}`);
+                        }
                     }
+    
+                } catch (error){
+                    logError(`Error while parsing : ${error}`)
                 }
-
-            } catch (error){
-                logError(`Error while parsing : ${error}`)
             }
+           
             try {
-                fs.appendFileSync('scanHistory.log', JSON.stringify(img) + '\n');
+                fs.appendFileSync(scanResultFile, JSON.stringify(img) + '\n');
             } catch (error) {
                 logError(`Error writing to file: ${error}`);
             }
-            // wait for a certain time to avoid been banned
+            // wait for a certain time to avoid rate limit
             
             await sleep(aiInterval);
         }
-        // not ding text, too much token consumed
+        // not doing text, too much token consumed
         // let textResult = await isSensitive(null, article.text)
         // article.isSensitive = textResult;
         // await sleep(aiInterval);
     }
     logInfo("End of validating the content with AI...");
     logDivider();
-    logInfo("[Report] validation result: ");
-    logInfo(articles.map(article => ({ images: article.images, isSensitive: article.isSensitive })));
-    logDivider();
+    // logInfo("[Report] validation result: ");
+    // logInfo(articles.map(article => ({ images: article.images, isSensitive: article.isSensitive })));
+    // logDivider();
     logInfo("App ends...")
 }
 
